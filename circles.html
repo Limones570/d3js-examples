@@ -1,91 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="description" content="Boop">
+  <title>Working Concentric Arc code</title>
+  <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/d3/3.2.2/d3.v3.min.js"></script>
+</head>
 
-  <head>
+<body>
+  <div class="chart"></div>
+  <script type="text/javascript">
+    // ======= Data set goes here =========
+    let normalizationScalar = 77
+    let data = [
+      { 
+        value: 20,
+        label: 'test',
+        color: 'rgb(213, 43, 30)'
+      },
+      { 
+        value: 10,
+        label: 'test 2',
+        color: 'rgb(213, 43, 30)'
+      },
+      { 
+        value: 30,
+        label: 'test 2',
+        color: 'rgb(113, 43, 30)'
+      },
+      { 
+        value: 10,
+        label: 'test 2',
+        color: 'rgb(213, 43, 30)'
+      },
+      { 
+        value: 10,
+        label: 'test 2',
+        color: 'rgb(213, 43, 30)'
+      },
+      { 
+        value: 20,
+        label: 'test 2',
+        color: 'rgb(213, 43, 30)'
+      },
+    ]
 
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta name="description" content="Basic beginner's source code to drawing arcs in D3 using dynamically-generated data.">
+    const arcMin = 75;        // inner radius of the first arc
+    const arcWidth = 15;      // width
+    const arcPad = 1;         // padding between arcs
+    const initialAngle = 0   // in degrees
+    const drawClockwise = false;
 
-    <title>JavaScript D3: Drawing Concentric Arcs (Part I)</title>
+    var width = window.innerWidth,
+        height = window.innerHeight;
 
-    <style type='text/css'>
-      .click-circle{
-        cursor: pointer;
-      }
-    </style>
-    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/d3/3.2.2/d3.v3.min.js"></script>
+      // append svg to the DIV
+    d3.select(".chart")
+      .append("svg:svg")
+        .attr("width", width)
+        .attr("height", height)
+      .append('legend')
 
-  </head>
+    function render () {
+      let dataColors = data.map(datum => datum.color)
+      let dataValues = data.map(datum => datum.value)
+      let dataLabels = data.map(datum => datum.label)
 
-  <body>
-    <div class="chart"></div>
-    <script type="text/javascript">
-
-  let normalizationScalar = 77
-  let data = [
-    { 
-      value: 10,
-      color: 'rgb(213, 43, 30)'
-    },
-    { 
-      value: 10,
-      color: 'rgb(213, 43, 30)'
-    },
-    { 
-      value: 30,
-      color: 'rgb(113, 43, 30)'
-    },
-    { 
-      value: 10,
-      color: 'rgb(213, 43, 30)'
-    },
-    { 
-      value: 10,
-      color: 'rgb(213, 43, 30)'
-    },
-  ]
+      vis = d3.select("svg");   // select the svg
 
 
-var width = window.innerWidth,
-    height = window.innerHeight;
+        // arc accessor
+        //  d and i are automatically passed to accessor functions,
+        //  with d being the data and i the index of the data
+      var drawArc = d3.svg.arc()
+        .innerRadius((d, i) => arcMin + i*arcWidth + arcPad)
+        .outerRadius((d, i) => arcMin + (i+1)*arcWidth)
+        .startAngle(initialAngle * (Math.PI/180))
+        .endAngle((d, i) => {
+          return (drawClockwise)
+            ? (initialAngle/360 + d/normalizationScalar) * 2*Math.PI
+            : (initialAngle/360 - d/normalizationScalar) * 2*Math.PI
+        })
 
-  // append svg to the DIV
-d3.select(".chart").append("svg:svg")
-  .attr("width", width)
-  .attr("height", height);
+        // bind the data
+      var arcs = vis
+        .selectAll("path.arc-path")
+        .data(dataValues)
+        .enter()
+        .append('svg')
 
-var render = function() {
-  let dataColors = data.map(datum => datum.color)
-  let dataValues = data.map(datum => datum.value)
+      arcs
+        .append("text")
+        .text((d, i) => dataLabels[i])
+        .attr("transform", (d, i) => `translate(405,${arcMin + (i-2)*arcWidth})`)    // sets position--easier than setting x's and y's
+        .attr('color', 'black')
 
-  vis = d3.select("svg");   // select the svg
+      arcs
+        .append("svg:path")
+          .attr("class", "arc-path")                  // assigns a class for easier selecting
+          .attr("transform", "translate(400,200)")    // sets position--easier than setting x's and y's
+          .attr("fill", (d, i) => dataColors[i])
+          .attr("d", drawArc)
+    };
 
-    // set constants
-  const arcMin = 75;        // inner radius of the first arc
-  const arcWidth = 15;      // width
-  const arcPad = 1;         // padding between arcs
-
-    // arc accessor
-    //  d and i are automatically passed to accessor functions,
-    //  with d being the data and i the index of the data
-  var drawArc = d3.svg.arc()
-    .innerRadius((d, i) => arcMin + i*arcWidth + arcPad )
-    .outerRadius((d, i) =>  arcMin + (i+1)*arcWidth)
-    .startAngle(0 * (Math.PI/180))
-    .endAngle((d, i) => d/normalizationScalar * 2*Math.PI )
-
-    // bind the data
-  var arcs = vis.selectAll("path.arc-path").data(dataValues);
-
-  arcs.enter().append("svg:path")
-      .attr("class", "arc-path")                  // assigns a class for easier selecting
-      .attr("transform", "translate(400,200)")    // sets position--easier than setting x's and y's
-      .attr("fill", (d, i) => dataColors[i])
-      .attr("d", drawArc);      // draw the arc
-};
-
-render()
+    render()
 
     </script>
   </body>
